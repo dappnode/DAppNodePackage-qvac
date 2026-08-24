@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#0a1110">
+    <title>QVAC configuration</title>
+    <link rel="icon" href="/avatar.png">
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#configuration">Skip to configuration</a>
+
+    <header class="topbar">
+      <a class="brand" href="#configuration" aria-label="QVAC configuration home">
+        <img src="/avatar.png" width="40" height="40" alt="">
+        <span>
+          <strong>QVAC</strong>
+          <small>DAppNode configuration</small>
+        </span>
+      </a>
+
+      <div class="topbar-actions">
+        <div class="runtime-state" id="runtime-state" data-state="loading" aria-live="polite">
+          <span class="state-signal" aria-hidden="true"></span>
+          <span id="runtime-label">Connecting</span>
+        </div>
+        <a class="button button-secondary" id="docs-link" href="http://qvac.dappnode:11434/docs" target="_blank" rel="noreferrer">
+          API docs
+        </a>
+        <button class="button button-primary" id="save-button" type="button" data-testid="save-config" disabled>
+          Save &amp; reload
+        </button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" aria-label="Configuration navigation">
+        <nav class="section-nav">
+          <a href="#general" aria-current="true">General</a>
+          <a href="#models">Models <span id="model-count">—</span></a>
+          <a href="#network">Network</a>
+          <a href="#advanced">JSON</a>
+        </nav>
+
+        <section class="runtime-summary" aria-labelledby="runtime-heading">
+          <div class="summary-heading">
+            <h2 id="runtime-heading">Runtime</h2>
+            <button class="text-button" id="refresh-status" type="button">Refresh</button>
+          </div>
+          <dl>
+            <div>
+              <dt>Worker</dt>
+              <dd id="worker-value">Connecting…</dd>
+            </div>
+            <div>
+              <dt>Configuration</dt>
+              <dd id="source-value">—</dd>
+            </div>
+            <div>
+              <dt>Authentication</dt>
+              <dd id="auth-value">—</dd>
+            </div>
+            <div>
+              <dt>QVAC</dt>
+              <dd id="version-value">—</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="backup-summary" aria-labelledby="backup-heading">
+          <div class="summary-heading">
+            <h2 id="backup-heading">Recent backups</h2>
+          </div>
+          <div id="backup-list" class="backup-list">
+            <p class="muted">Backups appear after your second save.</p>
+          </div>
+        </section>
+
+        <div class="sidebar-actions">
+          <a class="text-button" href="/api/export" download="qvac.config.json">Export JSON</a>
+          <label class="text-button" for="import-file">Import JSON</label>
+          <input id="import-file" class="visually-hidden" type="file" accept="application/json,.json">
+          <button class="text-button danger-text" id="reset-button" type="button">Restore generated defaults</button>
+          <div class="confirm-row" id="reset-confirmation" hidden>
+            <p>This removes the custom file and reloads QVAC.</p>
+            <div>
+              <button class="button button-danger" id="confirm-reset" type="button">Restore defaults</button>
+              <button class="button button-quiet" id="cancel-reset" type="button">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main id="configuration" class="content">
+        <div class="page-intro">
+          <div>
+            <p class="context-line">Persistent configuration · <code>/data/config/qvac.config.json</code></p>
+            <h1>Choose what QVAC loads.</h1>
+            <p>Common settings stay approachable here. Every saved change is validated, backed up, and applied by restarting only the QVAC worker.</p>
+          </div>
+          <div class="change-state" id="change-state" data-dirty="false">
+            <span aria-hidden="true"></span>
+            <strong id="change-label">No unsaved changes</strong>
+          </div>
+        </div>
+
+        <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+
+        <form id="config-form" novalidate>
+          <fieldset id="guided-fields" disabled>
+            <legend class="visually-hidden">Guided QVAC configuration</legend>
+            <section class="settings-section" id="general" aria-labelledby="general-heading">
+              <div class="section-heading">
+                <div>
+                  <h2 id="general-heading">General</h2>
+                  <p>Logging, storage, and download behavior for this DAppNode.</p>
+                </div>
+              </div>
+
+              <div class="setting-rows">
+                <div class="setting-row">
+                  <label for="logger-level">
+                    <strong>Log level</strong>
+                    <span>Controls QVAC SDK output in package logs.</span>
+                  </label>
+                  <select id="logger-level">
+                    <option value="error">Error</option>
+                    <option value="warn">Warning</option>
+                    <option value="info">Info</option>
+                    <option value="debug">Debug</option>
+                  </select>
+                </div>
+
+                <div class="setting-row">
+                  <div>
+                    <strong>Console logging</strong>
+                    <span>Write SDK logs to the DAppNode package log.</span>
+                  </div>
+                  <label class="switch">
+                    <input id="logger-console" type="checkbox">
+                    <span aria-hidden="true"></span>
+                    <span class="visually-hidden">Enable console logging</span>
+                  </label>
+                </div>
+
+                <div class="setting-row">
+                  <label for="cache-directory">
+                    <strong>Model cache</strong>
+                    <span>Keep this under <code>/data</code> so downloads persist.</span>
+                  </label>
+                  <input id="cache-directory" type="text" spellcheck="false" autocomplete="off">
+                </div>
+
+                <div class="setting-row setting-row-paired">
+                  <label for="download-concurrency">
+                    <strong>Parallel downloads</strong>
+                    <span>Concurrent HTTP downloads for sharded models.</span>
+                  </label>
+                  <input id="download-concurrency" type="number" min="1" step="1" inputmode="numeric">
+                  <label for="connection-timeout">
+                    <strong>Connection timeout</strong>
+                    <span>Milliseconds allowed when opening HTTP downloads.</span>
+                  </label>
+                  <input id="connection-timeout" type="number" min="1" step="1" inputmode="numeric">
+                </div>
+
+                <details class="disclosure">
+                  <summary>Registry reliability</summary>
+                  <div class="disclosure-content two-column-fields">
+                    <label>
+                      <span>Download retries</span>
+                      <input id="registry-retries" type="number" min="1" step="1" inputmode="numeric">
+                    </label>
+                    <label>
+                      <span>Stream timeout (ms)</span>
+                      <input id="registry-timeout" type="number" min="1" step="1" inputmode="numeric">
+                    </label>
+                  </div>
+                </details>
+              </div>
+            </section>
+
+            <section class="settings-section" id="models" aria-labelledby="models-heading">
+              <div class="section-heading section-heading-action">
+                <div>
+                  <h2 id="models-heading">Models</h2>
+                  <p>Choose supported models from the installed QVAC catalogue, or add a custom source.</p>
+                </div>
+                <div class="models-actions">
+                  <button class="button button-secondary" id="browse-models" type="button" aria-expanded="false" aria-controls="model-library">
+                    Browse library
+                  </button>
+                  <button class="button button-quiet" id="add-model" type="button" data-testid="add-model">Add custom</button>
+                </div>
+              </div>
+
+              <section class="model-library" id="model-library" aria-labelledby="model-library-heading" hidden>
+                <div class="library-heading">
+                  <div>
+                    <h3 id="model-library-heading">Model library</h3>
+                    <p>Selecting a model adds it to the configuration. Only models marked for preload use memory when QVAC starts.</p>
+                  </div>
+                  <button class="text-button" id="close-library" type="button">Close</button>
+                </div>
+
+                <div class="library-toolbar">
+                  <label class="library-search" for="model-search">
+                    <span class="visually-hidden">Search model library</span>
+                    <input id="model-search" type="search" autocomplete="off" spellcheck="false" placeholder="Search names, capabilities, or sizes">
+                  </label>
+                  <label class="library-size-filter" for="model-size-filter">
+                    <span>Download size</span>
+                    <select id="model-size-filter">
+                      <option value="all">Any size</option>
+                      <option value="light">Under 1 GB</option>
+                      <option value="medium">1–3 GB</option>
+                      <option value="heavy">3–6 GB</option>
+                      <option value="extreme">Over 6 GB</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="library-filters" id="model-filters" aria-label="Filter models by capability">
+                  <button type="button" data-library-filter="all" aria-pressed="true">All</button>
+                  <button type="button" data-library-filter="recommended" aria-pressed="false">Recommended</button>
+                  <button type="button" data-library-filter="chat" aria-pressed="false">Text</button>
+                  <button type="button" data-library-filter="embeddings" aria-pressed="false">Embeddings</button>
+                  <button type="button" data-library-filter="transcription" aria-pressed="false">Transcription</button>
+                  <button type="button" data-library-filter="translation" aria-pressed="false">Translation</button>
+                  <button type="button" data-library-filter="speech" aria-pressed="false">Speech</button>
+                  <button type="button" data-library-filter="images" aria-pressed="false">Images</button>
+                  <button type="button" data-library-filter="ocr" aria-pressed="false">OCR</button>
+                </div>
+
+                <div class="library-result-summary" id="library-result-summary" aria-live="polite">Loading model catalogue…</div>
+                <div class="library-results" id="library-results" aria-busy="true">
+                  <div class="library-skeleton" aria-hidden="true"></div>
+                  <div class="library-skeleton" aria-hidden="true"></div>
+                  <div class="library-skeleton" aria-hidden="true"></div>
+                </div>
+                <button class="button button-quiet library-more" id="library-more" type="button" hidden>Show more</button>
+
+                <div class="library-selection">
+                  <span id="library-selection-label" aria-live="polite">No models selected</span>
+                  <button class="button button-primary" id="add-selected-models" type="button" disabled>Add selected</button>
+                </div>
+              </section>
+
+              <div class="configured-models-heading">
+                <h3>Configured models</h3>
+                <p>Aliases are the names OpenAI-compatible clients send in API requests.</p>
+              </div>
+              <div id="model-list" class="model-list"></div>
+            </section>
+
+            <section class="settings-section" id="network" aria-labelledby="network-heading">
+              <div class="section-heading">
+                <div>
+                  <h2 id="network-heading">Network</h2>
+                  <p>Keep browser access explicit. Wildcard CORS origins are rejected by QVAC.</p>
+                </div>
+              </div>
+
+              <div class="setting-rows">
+                <div class="setting-row setting-row-block">
+                  <label for="cors-origins">
+                    <strong>Trusted browser origins</strong>
+                    <span>One exact HTTP(S) origin per line. Leave empty when only server-side clients use the API.</span>
+                  </label>
+                  <textarea id="cors-origins" rows="4" spellcheck="false" placeholder="https://chat.example.com&#10;http://localhost:3000"></textarea>
+                </div>
+                <div class="setting-row">
+                  <label for="public-base-url">
+                    <strong>Public base URL</strong>
+                    <span>Required when image responses return public URLs.</span>
+                  </label>
+                  <input id="public-base-url" type="url" spellcheck="false" autocomplete="url" placeholder="https://api.example.com">
+                </div>
+              </div>
+            </section>
+          </fieldset>
+
+          <section class="settings-section advanced-section" id="advanced" aria-labelledby="advanced-heading">
+            <div class="section-heading section-heading-action">
+              <div>
+                <h2 id="advanced-heading">Full JSON</h2>
+                <p>Edit options that are not represented in the guided controls.</p>
+              </div>
+              <button class="button button-secondary" id="edit-json" type="button">Edit JSON</button>
+            </div>
+
+            <div class="json-toolbar" id="json-toolbar" hidden>
+              <p>Guided controls are paused until this JSON is applied or cancelled.</p>
+              <div>
+                <button class="button button-primary" id="apply-json" type="button">Apply to form</button>
+                <button class="button button-quiet" id="cancel-json" type="button">Cancel</button>
+              </div>
+            </div>
+            <label class="visually-hidden" for="raw-json">Full QVAC configuration JSON</label>
+            <textarea class="json-editor" id="raw-json" rows="24" readonly spellcheck="false" autocomplete="off"></textarea>
+          </section>
+
+          <div class="form-footer">
+            <div>
+              <strong>Saving reloads the QVAC worker.</strong>
+              <span>The configuration page remains available while models load.</span>
+            </div>
+            <div>
+              <button class="button button-secondary" id="validate-button" type="button" disabled>Validate</button>
+              <button class="button button-primary" id="footer-save-button" type="submit" disabled>Save &amp; reload</button>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+  </body>
+</html>

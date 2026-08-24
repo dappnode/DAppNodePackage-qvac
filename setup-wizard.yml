@@ -1,0 +1,28 @@
+version: "2"
+
+fields:
+  - id: apiKey
+    target:
+      type: environment
+      name: QVAC_API_KEY
+    title: API key
+    description: >-
+      Optional bearer token required by all API routes except the API schema and
+      documentation. Strongly recommended if the service is reachable outside
+      your trusted DAppNode network.
+    secret: true
+    required: false
+
+  - id: httpPort
+    target:
+      type: portMapping
+      containerPort: "11434"
+    title: API port
+    description: Optional host port mapping for the OpenAI-compatible API.
+
+  - id: dataMountpoint
+    target:
+      type: namedVolumeMountpoint
+      volumeName: data
+    title: Data location
+    description: Disk used for downloaded models, caches, and custom configuration.

@@ -1,0 +1,32 @@
+version: "3.5"
+
+services:
+  qvac.dnp.dappnode.eth:
+    image: "qvac.dnp.dappnode.eth:0.1.0"
+    build:
+      context: .
+      args:
+        UPSTREAM_VERSION: "0.11.0"
+    restart: unless-stopped
+    volumes:
+      - "data:/data"
+    ports:
+      - "8080"
+      - "11434"
+    environment:
+      QVAC_API_KEY: ""
+      QVAC_API_PORT: "11434"
+      QVAC_UI_PORT: "8080"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "const fs=require('fs'),p='/data/runtime/api-key',k=fs.existsSync(p)?fs.readFileSync(p,'utf8').trim():'';fetch('http://127.0.0.1:11434/v1/models',{headers:k?{Authorization:'Bearer '+k}:{}}).then(r=>r.ok?r.json():Promise.reject()).then(x=>{if(!Array.isArray(x.data)||x.data.length<1)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 10m
+
+volumes:
+  data: {}

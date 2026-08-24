@@ -1,0 +1,7 @@
+*
+!Dockerfile
+!avatar.png
+!manager.mjs
+!qvac.config.mjs
+!ui/
+!ui/**
