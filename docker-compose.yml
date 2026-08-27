@@ -6,7 +6,7 @@ services:
     build:
       context: .
       args:
-        UPSTREAM_VERSION: "0.11.0"
+        UPSTREAM_VERSION: bci-test-assets-v0.1.0
     restart: unless-stopped
     volumes:
       - "data:/data"

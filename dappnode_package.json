@@ -1,44 +1,60 @@
 {
-  "name": "qvac.dnp.dappnode.eth",
-  "version": "0.1.0",
-  "upstream": [
-    {
-      "repo": "tetherto/qvac",
-      "version": "0.11.0",
-      "arg": "UPSTREAM_VERSION"
-    }
+  "architectures": [
+    "linux/amd64",
+    "linux/arm64"
   ],
-  "shortDescription": "Private multimodal AI with OpenAI-compatible APIs",
-  "description": "Run the complete [QVAC](https://qvac.tether.io/) CLI locally on DAppNode as an OpenAI-compatible AI provider. QVAC keeps prompts and inference on your own hardware. Its HTTP server supports text generation, embeddings, RAG, image and video generation, transcription, text-to-speech, and audio translation when the corresponding models are configured.\n\nA built-in configuration UI includes a searchable model library, validates and backs up settings, and applies changes without shell access. The QVAC worker reloads independently, so the UI remains available while models download or start. The default configuration serves the compact `QWEN3_600M_INST_Q4` text-generation model as `qwen3-600m`. Downloaded models, custom configuration, and backups are stored in a persistent volume.\n\nThis image includes QVAC's upstream worker and all native Linux addons shipped by the CLI.\n\n- Configuration UI: `http://qvac.dappnode:8080`\n- API: `http://qvac.dappnode:11434/v1`\n- API documentation: `http://qvac.dappnode:11434/docs`\n- CPU inference works on Linux; 4 GB RAM and 5 GB free disk are the upstream minimum recommendations, while larger models require more resources.\n- Set an API key during installation if clients outside your trusted DAppNode network can reach the service.",
-  "type": "service",
   "author": "DAppNode Association <admin@dappnode.io> (https://github.com/dappnode)",
-  "license": "Apache-2.0",
-  "categories": ["AI"],
-  "keywords": ["ai", "embeddings", "inference", "llm", "multimodal", "openai", "qvac", "rag", "speech", "tether"],
-  "architectures": ["linux/amd64", "linux/arm64"],
-  "dockerTimeout": "20min",
-  "requirements": {
-    "minimumDappnodeVersion": "0.2.106"
-  },
-  "links": {
-    "ui": "http://qvac.dappnode:8080",
-    "api": "http://qvac.dappnode:11434/v1",
-    "docs": "http://qvac.dappnode:11434/docs",
-    "homepage": "https://qvac.tether.io/"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dappnode/DAppNodePackage-qvac.git"
-  },
-  "bugs": {
-    "url": "https://github.com/dappnode/DAppNodePackage-qvac/issues"
-  },
   "backup": [
     {
       "name": "QVAC configuration",
       "path": "/data/config"
     }
   ],
+  "bugs": {
+    "url": "https://github.com/dappnode/DAppNodePackage-qvac/issues"
+  },
+  "categories": [
+    "AI"
+  ],
+  "description": "Run the complete [QVAC](https://qvac.tether.io/) CLI locally on DAppNode as an OpenAI-compatible AI provider. QVAC keeps prompts and inference on your own hardware. Its HTTP server supports text generation, embeddings, RAG, image and video generation, transcription, text-to-speech, and audio translation when the corresponding models are configured.\n\nA built-in configuration UI includes a searchable model library, validates and backs up settings, and applies changes without shell access. The QVAC worker reloads independently, so the UI remains available while models download or start. The default configuration serves the compact `QWEN3_600M_INST_Q4` text-generation model as `qwen3-600m`. Downloaded models, custom configuration, and backups are stored in a persistent volume.\n\nThis image includes QVAC's upstream worker and all native Linux addons shipped by the CLI.\n\n- Configuration UI: `http://qvac.dappnode:8080`\n- API: `http://qvac.dappnode:11434/v1`\n- API documentation: `http://qvac.dappnode:11434/docs`\n- CPU inference works on Linux; 4 GB RAM and 5 GB free disk are the upstream minimum recommendations, while larger models require more resources.\n- Set an API key during installation if clients outside your trusted DAppNode network can reach the service.",
+  "dockerTimeout": "20min",
+  "keywords": [
+    "ai",
+    "embeddings",
+    "inference",
+    "llm",
+    "multimodal",
+    "openai",
+    "qvac",
+    "rag",
+    "speech",
+    "tether"
+  ],
+  "license": "Apache-2.0",
+  "links": {
+    "api": "http://qvac.dappnode:11434/v1",
+    "docs": "http://qvac.dappnode:11434/docs",
+    "homepage": "https://qvac.tether.io/",
+    "ui": "http://qvac.dappnode:8080"
+  },
+  "name": "qvac.dnp.dappnode.eth",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dappnode/DAppNodePackage-qvac.git"
+  },
+  "requirements": {
+    "minimumDappnodeVersion": "0.2.106"
+  },
+  "shortDescription": "Private multimodal AI with OpenAI-compatible APIs",
+  "type": "service",
+  "upstream": [
+    {
+      "arg": "UPSTREAM_VERSION",
+      "repo": "tetherto/qvac",
+      "version": "bci-test-assets-v0.1.0"
+    }
+  ],
+  "version": "0.1.0",
   "warnings": {
     "onInstall": "Without an API key, QVAC is available without authentication to clients that can reach the DAppNode network. The configuration UI on port 8080 is administrative and should not be exposed publicly. The complete runtime image and configured model downloads can use many GB of storage. Large models may also require substantial RAM and take several minutes to load."
   }
