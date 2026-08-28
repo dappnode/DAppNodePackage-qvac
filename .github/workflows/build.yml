@@ -11,4 +11,6 @@ on:
 jobs:
   build:
     uses: dappnode/workflows/.github/workflows/dappnode-build-hash.yml@master
+    with:
+      all_variants: true
     secrets: inherit

@@ -1,0 +1,19 @@
+{
+  "name": "qvac-gpu.dnp.dappnode.eth",
+  "version": "0.1.0",
+  "shortDescription": "Private multimodal AI accelerated by AMD or NVIDIA GPUs",
+  "description": "Run the complete [QVAC](https://qvac.tether.io/) CLI locally on DAppNode as an OpenAI-compatible, GPU-accelerated AI provider. QVAC keeps prompts and inference on your own hardware. Its HTTP server supports text generation, embeddings, RAG, image and video generation, transcription, text-to-speech, and audio translation when the corresponding models are configured.\n\nA built-in configuration UI includes a searchable model library, validates and backs up settings, and applies changes without shell access. The QVAC worker reloads independently, so the UI remains available while models download or start. The default configuration serves the compact `QWEN3_600M_INST_Q4` text-generation model as `qwen3-600m`. Downloaded models, custom configuration, and backups are stored in a persistent volume.\n\nThis variant reserves all GPUs exposed by Docker's vendor-neutral GPU interface. It supports AMD and NVIDIA hosts when their container toolkit and CDI device specification are configured correctly.\n\n- Configuration UI: `http://qvac-gpu.dappnode:8080`\n- API: `http://qvac-gpu.dappnode:11434/v1`\n- API documentation: `http://qvac-gpu.dappnode:11434/docs`\n- At least 4 GB RAM and 5 GB free disk are required for the default model; larger models require substantially more RAM, GPU memory, and storage.\n- Set an API key during installation if clients outside your trusted DAppNode network can reach the service.",
+  "requirements": {
+    "minimumDappnodeVersion": "0.2.106",
+    "minimumDockerVersion": "29.3.0"
+  },
+  "links": {
+    "ui": "http://qvac-gpu.dappnode:8080",
+    "api": "http://qvac-gpu.dappnode:11434/v1",
+    "docs": "http://qvac-gpu.dappnode:11434/docs",
+    "homepage": "https://qvac.tether.io/"
+  },
+  "warnings": {
+    "onInstall": "This GPU variant requires a Vulkan-capable AMD or NVIDIA GPU plus a working GPU container runtime and CDI device specification. Install the CPU variant instead if `docker run --rm --gpus all ubuntu:24.04 true` fails on the host. Without an API key, QVAC is available without authentication to clients that can reach the DAppNode network. The configuration UI on port 8080 is administrative and should not be exposed publicly. The complete runtime image and configured model downloads can use many GB of storage. Large models may also require substantial RAM and GPU memory and take several minutes to load."
+  }
+}

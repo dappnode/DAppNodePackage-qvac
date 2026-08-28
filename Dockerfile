@@ -1,11 +1,11 @@
-FROM node:22-bookworm-slim
+FROM node:22-trixie-slim
 
 ARG UPSTREAM_VERSION
 ARG TARGETARCH
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-       ca-certificates ffmpeg libatomic1 libvulkan1 mesa-vulkan-drivers tini \
+       ca-certificates ffmpeg libatomic1 libvulkan1 mesa-vulkan-drivers tini vulkan-tools \
     && rm -rf /var/lib/apt/lists/* \
     && npm install --global --no-audit --no-fund "@qvac/cli@${UPSTREAM_VERSION}" \
     && chmod 0755 /usr/local/lib/node_modules/@qvac/cli/node_modules/bare-runtime-*/bin/bare \
@@ -26,18 +26,19 @@ WORKDIR /app
 
 COPY qvac.config.mjs /app/qvac.config.mjs
 COPY manager.mjs /app/manager.mjs
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY ui /app/ui
 COPY avatar.png /app/ui/avatar.png
 
 RUN mkdir -p /data/config /data/models /data/runtime \
-    && chown -R node:node /app /data
+    && chown -R node:node /app /data \
+    && chmod 0755 /usr/local/bin/entrypoint.sh
 
 ENV HOME=/data \
     NODE_ENV=production \
     QVAC_VERSION=${UPSTREAM_VERSION}
 
-USER node
-
 EXPOSE 8080 11434
 
-ENTRYPOINT ["/usr/bin/tini", "--", "node", "/app/manager.mjs"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["node", "/app/manager.mjs"]

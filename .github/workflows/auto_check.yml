@@ -11,4 +11,7 @@ on:
 jobs:
   bump-upstream:
     uses: dappnode/workflows/.github/workflows/bump-upstream.yml@master
+    with:
+      use_variants: true
+      variants_dir: package_variants
     secrets: inherit

@@ -1,0 +1,13 @@
+version: "3.5"
+
+services:
+  qvac:
+    image: "qvac.qvac-gpu.dnp.dappnode.eth:0.1.0"
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: "graphics,utility"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities:
+                - gpu

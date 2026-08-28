@@ -1,6 +1,7 @@
 *
 !Dockerfile
 !avatar.png
+!entrypoint.sh
 !manager.mjs
 !qvac.config.mjs
 !ui/

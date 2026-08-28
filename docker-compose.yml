@@ -1,12 +1,11 @@
 version: "3.5"
 
 services:
-  qvac.dnp.dappnode.eth:
-    image: "qvac.dnp.dappnode.eth:0.1.0"
+  qvac:
     build:
       context: .
       args:
-        UPSTREAM_VERSION: "0.11.0"
+        UPSTREAM_VERSION: "0.12.0"
     restart: unless-stopped
     volumes:
       - "data:/data"

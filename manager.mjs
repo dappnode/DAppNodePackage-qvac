@@ -78,6 +78,12 @@ const MODEL_PRESETS = {
     alias: 'qwen3-8b',
     config: { ctx_size: 4096 }
   },
+  QWEN3_8_27B_MULTIMODAL_UD_Q4_K_XL: {
+    title: 'Qwen 3.8 27B Multimodal Q4',
+    description: 'Large vision-language model for image understanding and text generation.',
+    alias: 'qwen3.8-27b-vision',
+    config: { ctx_size: 4096 }
+  },
   LLAMA_3_2_1B_INST_Q4_0: {
     title: 'Llama 3.2 1B',
     description: 'Compact instruction model for lightweight assistants and automation.',
@@ -157,6 +163,8 @@ const FALLBACK_MODELS = [
   ['QWEN3_1_7B_INST_Q4', 'llm', 1052267392, '1.7B', 'q4'],
   ['QWEN3_4B_INST_Q4_K_M', 'llm', 2501815168, '4B', 'q4_k_m'],
   ['QWEN3_8B_INST_Q4_K_M', 'llm', 5025111168, '8B', 'q4_k_m'],
+  ['QWEN3_8_27B_MULTIMODAL_UD_Q4_K_XL', 'llm', 17923394624, '27B', 'UD-Q4_K_XL'],
+  ['MMPROJ_QWEN3_8_27B_MULTIMODAL_F16', 'llm', 927607488, '27B', 'f16'],
   ['EMBEDDINGGEMMA_300M_Q4_0', 'embeddings', 279172992, '300M', 'q4_0'],
   ['WHISPER_SMALL_Q8_0', 'whisper', 267000000, '', 'q8_0'],
   ['PARAKEET_TDT_0_6B_V3_Q4_0', 'parakeet', 397000000, '0.6B', 'q4_0'],
@@ -202,11 +210,13 @@ function timestamp() {
   return new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-')
 }
 
-function isStandaloneCatalogModel(model) {
+function isStandaloneCatalogModel(model, multimodalProjections) {
   if (!MODEL_CAPABILITIES.has(model.addon)) return false
   if (model.name.startsWith('MMPROJ_') || /_(SHARD|TENSORS)$/.test(model.name)) return false
 
-  if (model.addon === 'llm') return !model.name.includes('_MULTIMODAL_')
+  if (model.addon === 'llm') {
+    return !model.name.includes('_MULTIMODAL_') || multimodalProjections.has(model.name)
+  }
   if (model.addon === 'nmt') return Boolean(model.companionSet) && model.name !== 'BERGAMOT'
   if (model.addon === 'tts') {
     return model.name.includes('SUPERTONIC') || model.name.includes('PARLER_TTS')
@@ -214,6 +224,49 @@ function isStandaloneCatalogModel(model) {
   if (model.addon === 'whisper') return !model.name.startsWith('VAD_')
   if (model.addon === 'diffusion') return model.name.startsWith('SD_V2_1_1B_')
   return true
+}
+
+function multimodalFamily(name) {
+  return /^(?:MMPROJ_)?(.+)_MULTIMODAL_/.exec(name)?.[1] ?? null
+}
+
+function registryDirectory(model) {
+  if (typeof model.registryPath !== 'string') return null
+  return model.registryPath.slice(0, model.registryPath.lastIndexOf('/'))
+}
+
+function multimodalProjectionMap(registryModels) {
+  const projectionsByFamily = new Map()
+  for (const model of registryModels) {
+    if (!model.name.startsWith('MMPROJ_')) continue
+    const family = multimodalFamily(model.name)
+    if (!family) continue
+    const projections = projectionsByFamily.get(family) ?? []
+    projections.push(model)
+    projectionsByFamily.set(family, projections)
+  }
+
+  const result = new Map()
+  for (const model of registryModels) {
+    if (model.addon !== 'llm' || model.name.startsWith('MMPROJ_') || !model.name.includes('_MULTIMODAL_')) continue
+    const family = multimodalFamily(model.name)
+    const modelDirectory = registryDirectory(model)
+    const familyProjections = projectionsByFamily.get(family) ?? []
+    const candidates = modelDirectory
+      ? familyProjections.filter((projection) => registryDirectory(projection) === modelDirectory)
+      : familyProjections
+    candidates.sort((a, b) => projectionPreference(a, model) - projectionPreference(b, model))
+    if (candidates[0]) result.set(model.name, candidates[0])
+  }
+  return result
+}
+
+function projectionPreference(projection, model) {
+  if (projection.quantization === model.quantization) return 0
+  if (projection.quantization === 'q8_0') return 1
+  if (projection.quantization === 'f16') return 2
+  if (projection.quantization === 'bf16') return 3
+  return 4
 }
 
 function languageName(code) {
@@ -252,6 +305,7 @@ function modelDescription(model, capability) {
 
   return {
     chat: 'Local text generation and chat model.',
+    vision: 'Vision-language model for local image understanding and text generation.',
     embeddings: 'Vector embeddings for semantic search and RAG.',
     transcription: model.addon === 'parakeet'
       ? 'Speech recognition powered by NVIDIA Parakeet.'
@@ -276,23 +330,27 @@ function suggestedAlias(model) {
     .slice(0, 64)
 }
 
-function defaultModelConfig(model) {
+function defaultModelConfig(model, projectionModel) {
   const preset = MODEL_PRESETS[model.name]
-  if (preset?.config) return structuredClone(preset.config)
-  if (model.addon === 'llm') return { ctx_size: 4096 }
-  if (model.addon === 'tts' && model.name.includes('SUPERTONIC')) {
-    return { ttsEngine: 'supertonic', language: 'en', voice: 'F1' }
-  }
-  if (model.addon === 'tts' && model.name.includes('PARLER_TTS')) {
-    return { ttsEngine: 'parler', voice: 'Laura' }
-  }
-  if (model.addon === 'diffusion') return { prediction: 'v' }
-  return {}
+  let config
+  if (preset?.config) config = structuredClone(preset.config)
+  else if (model.addon === 'llm') config = { ctx_size: 4096 }
+  else if (model.addon === 'tts' && model.name.includes('SUPERTONIC')) {
+    config = { ttsEngine: 'supertonic', language: 'en', voice: 'F1' }
+  } else if (model.addon === 'tts' && model.name.includes('PARLER_TTS')) {
+    config = { ttsEngine: 'parler', voice: 'Laura' }
+  } else if (model.addon === 'diffusion') config = { prediction: 'v' }
+  else config = {}
+
+  if (projectionModel) config.projectionModelSrc = projectionModel.name
+  return config
 }
 
-function modelDownloadSize(model) {
-  if (!model.companionSet?.files?.length) return model.expectedSize ?? 0
-  return model.companionSet.files.reduce((total, file) => total + (file.expectedSize ?? 0), 0)
+function modelDownloadSize(model, projectionModel) {
+  const modelSize = !model.companionSet?.files?.length
+    ? model.expectedSize ?? 0
+    : model.companionSet.files.reduce((total, file) => total + (file.expectedSize ?? 0), 0)
+  return modelSize + (projectionModel?.expectedSize ?? 0)
 }
 
 function resourceTier(bytes) {
@@ -302,9 +360,11 @@ function resourceTier(bytes) {
   return 'extreme'
 }
 
-function catalogEntry(model) {
-  const [capability, capabilityLabel] = MODEL_CAPABILITIES.get(model.addon)
-  const downloadSize = modelDownloadSize(model)
+function catalogEntry(model, projectionModel) {
+  const [baseCapability, baseCapabilityLabel] = MODEL_CAPABILITIES.get(model.addon)
+  const capability = projectionModel ? 'vision' : baseCapability
+  const capabilityLabel = projectionModel ? 'Vision + text' : baseCapabilityLabel
+  const downloadSize = modelDownloadSize(model, projectionModel)
   return {
     name: model.name,
     title: modelTitle(model),
@@ -318,7 +378,7 @@ function catalogEntry(model) {
     downloadSize,
     resourceTier: resourceTier(downloadSize),
     recommended: Boolean(MODEL_PRESETS[model.name]?.recommended),
-    config: defaultModelConfig(model)
+    config: defaultModelConfig(model, projectionModel)
   }
 }
 
@@ -336,10 +396,11 @@ async function modelCatalog() {
         registryModels = FALLBACK_MODELS
       }
 
-      const capabilityOrder = ['chat', 'embeddings', 'transcription', 'translation', 'speech', 'images', 'ocr']
+      const multimodalProjections = multimodalProjectionMap(registryModels)
+      const capabilityOrder = ['chat', 'vision', 'embeddings', 'transcription', 'translation', 'speech', 'images', 'ocr']
       return registryModels
-        .filter(isStandaloneCatalogModel)
-        .map(catalogEntry)
+        .filter((model) => isStandaloneCatalogModel(model, multimodalProjections))
+        .map((model) => catalogEntry(model, multimodalProjections.get(model.name)))
         .sort((a, b) => {
           if (a.recommended !== b.recommended) return a.recommended ? -1 : 1
           const capabilityDifference = capabilityOrder.indexOf(a.capability) - capabilityOrder.indexOf(b.capability)
