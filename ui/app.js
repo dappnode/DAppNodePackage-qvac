@@ -61,6 +61,8 @@ const defaults = {
   registryStreamTimeoutMs: 60000
 }
 
+const STATUS_REFRESH_INTERVAL_MS = 30_000
+
 const modelTypes = [
   ['llm', 'Text generation'],
   ['embeddings', 'Embeddings'],
@@ -78,6 +80,7 @@ let dirty = false
 let jsonEditing = false
 let syncTimer = null
 let noticeTimer = null
+let statusRefreshTimer = null
 let catalog = []
 let catalogLoadPromise = null
 let catalogFilter = 'all'
@@ -688,6 +691,18 @@ async function refreshStatus() {
   }
 }
 
+function scheduleStatusRefresh() {
+  clearInterval(statusRefreshTimer)
+  statusRefreshTimer = null
+  if (document.visibilityState !== 'visible') return
+  statusRefreshTimer = setInterval(refreshStatus, STATUS_REFRESH_INTERVAL_MS)
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') refreshStatus()
+  scheduleStatusRefresh()
+}
+
 async function validate(nextConfig = null, announce = true) {
   const candidate = nextConfig ?? collectConfig()
   await request('/api/validate', {
@@ -946,8 +961,12 @@ window.addEventListener('keydown', (event) => {
     if (dirty && !jsonEditing) saveConfig()
   }
 })
+document.addEventListener('visibilitychange', handleVisibilityChange)
 
 configureApiLinks()
 configureNavigation()
-await Promise.all([loadConfig(), refreshStatus()])
-setInterval(refreshStatus, 5000)
+await Promise.all([
+  loadConfig(),
+  document.visibilityState === 'visible' ? refreshStatus() : Promise.resolve()
+])
+scheduleStatusRefresh()
