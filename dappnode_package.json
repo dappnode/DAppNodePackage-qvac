@@ -2,7 +2,7 @@
   "upstream": [
     {
       "repo": "tetherto/qvac",
-      "version": "0.12.0",
+      "version": "sdk-v0.24.2",
       "arg": "UPSTREAM_VERSION"
     }
   ],
@@ -12,9 +12,25 @@
   "mainService": "qvac",
   "author": "DAppNode Association <admin@dappnode.io> (https://github.com/dappnode)",
   "license": "Apache-2.0",
-  "categories": ["AI"],
-  "keywords": ["ai", "embeddings", "inference", "llm", "multimodal", "openai", "qvac", "rag", "speech", "tether"],
-  "architectures": ["linux/amd64", "linux/arm64"],
+  "categories": [
+    "AI"
+  ],
+  "keywords": [
+    "ai",
+    "embeddings",
+    "inference",
+    "llm",
+    "multimodal",
+    "openai",
+    "qvac",
+    "rag",
+    "speech",
+    "tether"
+  ],
+  "architectures": [
+    "linux/amd64",
+    "linux/arm64"
+  ],
   "dockerTimeout": "20min",
   "requirements": {
     "minimumDappnodeVersion": "0.2.106"
